@@ -1,5 +1,5 @@
 use crate::block::{block_kind, block_kind::WALL as W, BlockColor, COLOR_TABLE};
-use crate::mino::{MinoKind, MinoShape, MINOS};
+use crate::mino::{gen_mino_7, MinoKind, MinoShape, MINOS};
 use std::collections::VecDeque;
 
 pub const NEXT_LENGTH: usize = 3;
@@ -28,11 +28,12 @@ pub struct Game {
     pub hold: Option<MinoShape>,
     pub holded: bool,
     pub next: VecDeque<MinoShape>,
+    pub next_buf: VecDeque<MinoShape>,
 }
 
 impl Game {
     pub fn new() -> Game {
-        Game {
+        let mut game = Game {
             field: [
                 [0, W, W, W, 0, 0, 0, 0, 0, 0, W, W, W, 0],
                 [0, W, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, W, 0],
@@ -62,14 +63,11 @@ impl Game {
             mino: MINOS[rand::random::<MinoKind>() as usize],
             hold: None,
             holded: false,
-            next: {
-                let mut deque = VecDeque::new();
-                for _ in 0..NEXT_LENGTH {
-                    deque.push_back(MINOS[rand::random::<MinoKind>() as usize]);
-                }
-                deque
-            },
-        }
+            next: gen_mino_7().into(),
+            next_buf: gen_mino_7().into(),
+        };
+        spawn_mino(&mut game).ok();
+        game
     }
 }
 
@@ -96,6 +94,7 @@ pub fn draw(
         hold,
         holded: _,
         next,
+        next_buf: _,
     }: &Game,
 ) {
     let mut field_buf = *field;
@@ -130,7 +129,7 @@ pub fn draw(
 
     // next minos rendering
     println!("\x1b[8;28HNEXT");
-    for (i, next) in next.iter().enumerate() {
+    for (i, next) in next.iter().take(NEXT_LENGTH).enumerate() {
         for y in 0..4 {
             print!("\x1b[{};28H", i * 4 + y + 9);
             for x in 0..4 {
@@ -161,6 +160,7 @@ pub fn fix_mino(
         hold: _,
         holded: _,
         next: _,
+        next_buf: _,
     }: &mut Game,
 ) {
     for y in 0..4 {
@@ -198,8 +198,14 @@ pub fn move_mino(game: &mut Game, new_pos: Position) {
 pub fn spawn_mino(game: &mut Game) -> Result<(), ()> {
     game.pos = Position::init();
     game.mino = game.next.pop_front().unwrap();
-    game.next
-        .push_back(MINOS[rand::random::<MinoKind>() as usize]);
+
+    if let Some(next) = game.next_buf.pop_front() {
+        game.next.push_back(next);
+    } else {
+        game.next_buf = gen_mino_7().into();
+        game.next.push_back(game.next_buf.pop_front().unwrap());
+    }
+
     if is_collision(&game.field, &game.pos, &game.mino) {
         Err(())
     } else {

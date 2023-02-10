@@ -1,8 +1,11 @@
 use crate::block::block_kind::{I, J, L, O, S, T, Z};
 use rand::{
     distributions::{Distribution, Standard},
-    Rng,
+    seq::SliceRandom,
+    thread_rng, Rng,
 };
+
+const MINO_KIND_MAX: usize = 7;
 
 #[derive(Clone, Copy)]
 pub enum MinoKind {
@@ -31,7 +34,7 @@ impl Distribution<MinoKind> for Standard {
 
 pub type MinoShape = [[usize; 4]; 4];
 
-pub const MINOS: [MinoShape; 7] = [
+pub const MINOS: [MinoShape; MINO_KIND_MAX] = [
     [
         // I mino
         [0, 0, 0, 0],
@@ -82,3 +85,18 @@ pub const MINOS: [MinoShape; 7] = [
         [0, 0, 0, 0],
     ],
 ];
+
+pub fn gen_mino_7() -> [MinoShape; MINO_KIND_MAX] {
+    let mut rng = thread_rng();
+    let mut queue = [
+        MinoKind::I,
+        MinoKind::O,
+        MinoKind::S,
+        MinoKind::Z,
+        MinoKind::J,
+        MinoKind::L,
+        MinoKind::T,
+    ];
+    queue.shuffle(&mut rng);
+    queue.map(|mino| MINOS[mino as usize])
+}
