@@ -24,10 +24,8 @@ fn main() {
             };
             if !is_collision(&game.field, &new_pos, &game.mino) {
                 game.pos = new_pos;
-            } else {
-                if landing(&mut game).is_err() {
-                    gameover(&game);
-                }
+            } else if landing(&mut game).is_err() {
+                gameover(&game);
             }
             draw(&game);
         });
@@ -63,7 +61,18 @@ fn main() {
                 move_mino(&mut game, new_pos);
                 draw(&game);
             }
-            Ok(Key::Char('x')) => {
+            Ok(Key::Char(' ')) => {
+                let mut game = game.lock().unwrap();
+                hard_drop(&mut game);
+                landing(&mut game);
+                draw(&game);
+            }
+            Ok(Key::Char('c')) => {
+                let mut game = game.lock().unwrap();
+                hold(&mut game);
+                draw(&game);
+            }
+            Ok(Key::Up) => {
                 let mut game = game.lock().unwrap();
                 rotate_right(&mut game);
                 draw(&game);
@@ -76,12 +85,7 @@ fn main() {
             Ok(Key::Char('q')) => {
                 quit();
             }
-            Ok(Key::Up) => {
-                let mut game = game.lock().unwrap();
-                hard_drop(&mut game);
-                landing(&mut game);
-                draw(&game);
-            }
+
             _ => (),
         }
     }

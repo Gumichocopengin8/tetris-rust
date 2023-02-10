@@ -22,6 +22,8 @@ pub struct Game {
     pub field: FieldSize,
     pub pos: Position,
     pub mino: MinoShape,
+    pub hold: Option<MinoShape>,
+    pub holded: bool,
 }
 
 impl Game {
@@ -54,6 +56,8 @@ impl Game {
             ],
             pos: Position::init(),
             mino: MINOS[rand::random::<MinoKind>() as usize],
+            hold: None,
+            holded: false,
         }
     }
 }
@@ -73,7 +77,15 @@ pub fn is_collision(field: &FieldSize, pos: &Position, mino: &MinoShape) -> bool
 }
 
 #[allow(clippy::needless_range_loop)]
-pub fn draw(Game { field, pos, mino }: &Game) {
+pub fn draw(
+    Game {
+        field,
+        pos,
+        mino,
+        hold,
+        holded: _,
+    }: &Game,
+) {
     let mut field_buf = *field;
 
     let ghost_pos = ghost_pos(field, pos, mino);
@@ -93,6 +105,17 @@ pub fn draw(Game { field, pos, mino }: &Game) {
         }
     }
 
+    // hold rendering
+    println!("\x1b[2;28HHOLD");
+    if let Some(hold) = hold {
+        for y in 0..4 {
+            print!("\x1b[{};28H", y + 3);
+            for x in 0..4 {
+                print!("{}", COLOR_TABLE[hold[y][x]]);
+            }
+        }
+    }
+
     println!("\x1b[H");
     for y in 0..FIELD_HEIGHT - 1 {
         for x in 1..FIELD_WIDTH - 1 {
@@ -100,9 +123,20 @@ pub fn draw(Game { field, pos, mino }: &Game) {
         }
         println!();
     }
+
+    // reset color info
+    println!("\x1b[0m");
 }
 
-pub fn fix_mino(Game { field, pos, mino }: &mut Game) {
+pub fn fix_mino(
+    Game {
+        field,
+        pos,
+        mino,
+        hold: _,
+        holded: _,
+    }: &mut Game,
+) {
     for y in 0..4 {
         for x in 0..4 {
             if mino[y][x] != block_kind::NONE {
@@ -206,6 +240,7 @@ pub fn landing(game: &mut Game) -> Result<(), ()> {
     fix_mino(game);
     erase_line(&mut game.field);
     spawn_mino(game)?;
+    game.holded = false;
     Ok(())
 }
 
@@ -251,4 +286,19 @@ fn super_rotation(field: &FieldSize, pos: &Position, mino: &MinoShape) -> Result
         }
     }
     Err(())
+}
+
+pub fn hold(game: &mut Game) {
+    if game.holded {
+        return;
+    }
+    if let Some(mut hold) = game.hold {
+        std::mem::swap(&mut hold, &mut game.mino);
+        game.hold = Some(hold);
+        game.pos = Position::init();
+    } else {
+        game.hold = Some(game.mino);
+        spawn_mino(game).ok();
+    }
+    game.holded = true;
 }
