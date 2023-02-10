@@ -38,6 +38,7 @@ pub struct Game {
     pub next: VecDeque<MinoShape>,
     pub next_buf: VecDeque<MinoShape>,
     pub score: usize,
+    pub total_line: usize, // total line deletion
 }
 
 impl Game {
@@ -75,6 +76,7 @@ impl Game {
             next: gen_mino_7().into(),
             next_buf: gen_mino_7().into(),
             score: 0,
+            total_line: 0,
         };
         spawn_mino(&mut game).ok();
         game
@@ -106,6 +108,7 @@ pub fn draw(
         next,
         next_buf: _,
         score,
+        total_line,
     }: &Game,
 ) {
     let mut field_buf = *field;
@@ -153,6 +156,9 @@ pub fn draw(
     // score rendering
     println!("\x1b[22;28H{score}");
 
+    // totle line rendering
+    println!("\x1b[24;28H{total_line} lines in total");
+
     // field rendering
     println!("\x1b[H");
     for y in 0..FIELD_HEIGHT - 1 {
@@ -176,6 +182,7 @@ pub fn fix_mino(
         next: _,
         next_buf: _,
         score: _,
+        total_line: _,
     }: &mut Game,
 ) {
     for y in 0..4 {
@@ -292,6 +299,7 @@ pub fn landing(game: &mut Game) -> Result<(), ()> {
     fix_mino(game);
     let line_count = erase_line(&mut game.field);
     game.score += SCORE_TABLE[line_count];
+    game.total_line += line_count;
     spawn_mino(game)?;
     game.holded = false;
     Ok(())

@@ -16,7 +16,12 @@ fn main() {
         let game = Arc::clone(&game);
 
         let _ = thread::spawn(move || loop {
-            thread::sleep(time::Duration::from_millis(1000));
+            let sleep_msec =
+                match 1000u64.saturating_sub((game.lock().unwrap().total_line as u64 / 10) * 100) {
+                    0 => 100,
+                    msec => msec,
+                };
+            thread::sleep(time::Duration::from_millis(sleep_msec));
             let mut game = game.lock().unwrap();
             let new_pos = Position {
                 x: game.pos.x,
