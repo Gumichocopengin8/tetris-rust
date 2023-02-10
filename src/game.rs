@@ -1,5 +1,8 @@
 use crate::block::{block_kind, block_kind::WALL as W, BlockColor, COLOR_TABLE};
 use crate::mino::{MinoKind, MinoShape, MINOS};
+use std::collections::VecDeque;
+
+pub const NEXT_LENGTH: usize = 3;
 
 pub const FIELD_WIDTH: usize = 12 + 2;
 pub const FIELD_HEIGHT: usize = 22 + 1;
@@ -24,6 +27,7 @@ pub struct Game {
     pub mino: MinoShape,
     pub hold: Option<MinoShape>,
     pub holded: bool,
+    pub next: VecDeque<MinoShape>,
 }
 
 impl Game {
@@ -58,6 +62,13 @@ impl Game {
             mino: MINOS[rand::random::<MinoKind>() as usize],
             hold: None,
             holded: false,
+            next: {
+                let mut deque = VecDeque::new();
+                for _ in 0..NEXT_LENGTH {
+                    deque.push_back(MINOS[rand::random::<MinoKind>() as usize]);
+                }
+                deque
+            },
         }
     }
 }
@@ -84,6 +95,7 @@ pub fn draw(
         mino,
         hold,
         holded: _,
+        next,
     }: &Game,
 ) {
     let mut field_buf = *field;
@@ -116,6 +128,19 @@ pub fn draw(
         }
     }
 
+    // next minos rendering
+    println!("\x1b[8;28HNEXT");
+    for (i, next) in next.iter().enumerate() {
+        for y in 0..4 {
+            print!("\x1b[{};28H", i * 4 + y + 9);
+            for x in 0..4 {
+                print!("{}", COLOR_TABLE[next[y][x]]);
+            }
+            println!();
+        }
+    }
+
+    // field rendering
     println!("\x1b[H");
     for y in 0..FIELD_HEIGHT - 1 {
         for x in 1..FIELD_WIDTH - 1 {
@@ -135,6 +160,7 @@ pub fn fix_mino(
         mino,
         hold: _,
         holded: _,
+        next: _,
     }: &mut Game,
 ) {
     for y in 0..4 {
@@ -171,7 +197,9 @@ pub fn move_mino(game: &mut Game, new_pos: Position) {
 
 pub fn spawn_mino(game: &mut Game) -> Result<(), ()> {
     game.pos = Position::init();
-    game.mino = MINOS[rand::random::<MinoKind>() as usize];
+    game.mino = game.next.pop_front().unwrap();
+    game.next
+        .push_back(MINOS[rand::random::<MinoKind>() as usize]);
     if is_collision(&game.field, &game.pos, &game.mino) {
         Err(())
     } else {
