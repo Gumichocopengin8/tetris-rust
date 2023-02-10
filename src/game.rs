@@ -7,6 +7,14 @@ pub const NEXT_LENGTH: usize = 3;
 pub const FIELD_WIDTH: usize = 12 + 2;
 pub const FIELD_HEIGHT: usize = 22 + 1;
 
+pub const SCORE_TABLE: [usize; 5] = [
+    0,   // 0 line
+    1,   // 1 line
+    5,   // 2 lines
+    25,  // 3 lines
+    100, //  4lines
+];
+
 pub type FieldSize = [[BlockColor; FIELD_WIDTH]; FIELD_HEIGHT];
 
 #[derive(Clone, Copy)]
@@ -29,6 +37,7 @@ pub struct Game {
     pub holded: bool,
     pub next: VecDeque<MinoShape>,
     pub next_buf: VecDeque<MinoShape>,
+    pub score: usize,
 }
 
 impl Game {
@@ -65,6 +74,7 @@ impl Game {
             holded: false,
             next: gen_mino_7().into(),
             next_buf: gen_mino_7().into(),
+            score: 0,
         };
         spawn_mino(&mut game).ok();
         game
@@ -95,6 +105,7 @@ pub fn draw(
         holded: _,
         next,
         next_buf: _,
+        score,
     }: &Game,
 ) {
     let mut field_buf = *field;
@@ -139,6 +150,9 @@ pub fn draw(
         }
     }
 
+    // score rendering
+    println!("\x1b[22;28H{score}");
+
     // field rendering
     println!("\x1b[H");
     for y in 0..FIELD_HEIGHT - 1 {
@@ -161,6 +175,7 @@ pub fn fix_mino(
         holded: _,
         next: _,
         next_buf: _,
+        score: _,
     }: &mut Game,
 ) {
     for y in 0..4 {
@@ -172,7 +187,8 @@ pub fn fix_mino(
     }
 }
 
-pub fn erase_line(field: &mut FieldSize) {
+pub fn erase_line(field: &mut FieldSize) -> usize {
+    let mut line_count = 0;
     for y in 1..FIELD_HEIGHT - 2 {
         let mut can_erase = true;
         for x in 1..FIELD_WIDTH - 1 {
@@ -182,11 +198,13 @@ pub fn erase_line(field: &mut FieldSize) {
             }
         }
         if can_erase {
+            line_count += 1;
             for y2 in (2..=y).rev() {
                 field[y2] = field[y2 - 1];
             }
         }
     }
+    line_count
 }
 
 pub fn move_mino(game: &mut Game, new_pos: Position) {
@@ -272,7 +290,8 @@ pub fn hard_drop(game: &mut Game) {
 
 pub fn landing(game: &mut Game) -> Result<(), ()> {
     fix_mino(game);
-    erase_line(&mut game.field);
+    let line_count = erase_line(&mut game.field);
+    game.score += SCORE_TABLE[line_count];
     spawn_mino(game)?;
     game.holded = false;
     Ok(())
