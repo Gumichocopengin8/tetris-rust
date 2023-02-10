@@ -1,6 +1,7 @@
+use crate::block::block_kind::{I, J, L, O, S, T, Z};
 use rand::{
-  distributions::{Distribution, Standard},
-  Rng,
+    distributions::{Distribution, Standard},
+    Rng,
 };
 
 #[derive(Clone, Copy)]
@@ -28,54 +29,56 @@ impl Distribution<MinoKind> for Standard {
     }
 }
 
-pub const MINOS: [[[usize; 4]; 4]; 7] = [
+pub type MinoShape = [[usize; 4]; 4];
+
+pub const MINOS: [MinoShape; 7] = [
     [
         // I mino
         [0, 0, 0, 0],
         [0, 0, 0, 0],
-        [1, 1, 1, 1],
+        [I, I, I, I],
         [0, 0, 0, 0],
     ],
     [
         // O mino
         [0, 0, 0, 0],
-        [0, 1, 1, 0],
-        [0, 1, 1, 0],
+        [0, O, O, 0],
+        [0, O, O, 0],
         [0, 0, 0, 0],
     ],
     [
         // S mino
         [0, 0, 0, 0],
-        [0, 1, 1, 0],
-        [1, 1, 0, 0],
+        [0, S, S, 0],
+        [S, S, 0, 0],
         [0, 0, 0, 0],
     ],
     [
         // Z mino
         [0, 0, 0, 0],
-        [1, 1, 0, 0],
-        [0, 1, 1, 0],
+        [Z, Z, 0, 0],
+        [0, Z, Z, 0],
         [0, 0, 0, 0],
     ],
     [
         // J mino
         [0, 0, 0, 0],
-        [1, 0, 0, 0],
-        [1, 1, 1, 0],
+        [J, 0, 0, 0],
+        [J, J, J, 0],
         [0, 0, 0, 0],
     ],
     [
         // L mino
         [0, 0, 0, 0],
-        [0, 0, 1, 0],
-        [1, 1, 1, 0],
+        [0, 0, L, 0],
+        [L, L, L, 0],
         [0, 0, 0, 0],
     ],
     [
         // T mino
         [0, 0, 0, 0],
-        [0, 1, 0, 0],
-        [1, 1, 1, 0],
+        [0, T, 0, 0],
+        [T, T, T, 0],
         [0, 0, 0, 0],
     ],
 ];

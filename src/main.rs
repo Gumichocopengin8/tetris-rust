@@ -1,3 +1,4 @@
+mod block;
 mod game;
 mod mino;
 use game::*;
@@ -21,13 +22,12 @@ fn main() {
                 x: game.pos.x,
                 y: game.pos.y + 1,
             };
-            if !is_collision(&game.field, &new_pos, game.mino) {
+            if !is_collision(&game.field, &new_pos, &game.mino) {
                 game.pos = new_pos;
             } else {
-                fix_mino(&mut game);
-                erase_line(&mut game.field);
-                game.pos = Position { x: 4, y: 0 };
-                game.mino = rand::random();
+                if landing(&mut game).is_err() {
+                    gameover(&game);
+                }
             }
             draw(&game);
         });
@@ -63,9 +63,24 @@ fn main() {
                 move_mino(&mut game, new_pos);
                 draw(&game);
             }
+            Ok(Key::Char('x')) => {
+                let mut game = game.lock().unwrap();
+                rotate_right(&mut game);
+                draw(&game);
+            }
+            Ok(Key::Char('z')) => {
+                let mut game = game.lock().unwrap();
+                rotate_left(&mut game);
+                draw(&game);
+            }
             Ok(Key::Char('q')) => {
-                println!("\x1b[?25h");
-                return;
+                quit();
+            }
+            Ok(Key::Up) => {
+                let mut game = game.lock().unwrap();
+                hard_drop(&mut game);
+                landing(&mut game);
+                draw(&game);
             }
             _ => (),
         }
