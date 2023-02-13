@@ -1,8 +1,8 @@
 use crate::{block::block_kind, game::*};
 
 pub fn eval(game: &Game) -> Game {
-    // (Game, line, height_max)
-    let mut elite = (game.clone(), 0, FIELD_HEIGHT);
+    // (Game, score)
+    let mut elite = (game.clone(), 0f64);
 
     for rotate_count in 0..=3 {
         let mut game = game.clone();
@@ -24,10 +24,21 @@ pub fn eval(game: &Game) -> Game {
 
             let line = erase_line_count(&game.field);
             let height_max = field_height_max(&game.field);
-            if line >= elite.1 && height_max <= elite.2 {
+
+            // normaliztion
+            let mut line = normalization(line as f64, 0.0, 4.0);
+            let mut height_max = 1.0 - normalization(height_max as f64, 0.0, 20.0);
+
+            // add weight
+            line *= 100.0;
+            height_max *= 1.0;
+
+            // calculate score
+            let score = line + height_max;
+
+            if elite.1 < score {
                 elite.0 = game;
-                elite.1 = line;
-                elite.2 = height_max;
+                elite.1 = score;
             }
         }
     }
@@ -62,4 +73,8 @@ fn field_height_max(field: &FieldSize) -> usize {
         }
     }
     unreachable!()
+}
+
+fn normalization(value: f64, min: f64, max: f64) -> f64 {
+    (value - min) / (max - min)
 }
