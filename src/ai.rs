@@ -22,29 +22,52 @@ pub fn eval(game: &Game) -> Game {
             hard_drop(&mut game);
             fix_mino(&mut game);
 
-            let line = erase_line_count(&game.field);
-            let height_max = field_height_max(&game.field);
-            let height_diff = diff_in_height(&game.field);
-            let dead_space = dead_space_count(&game.field);
+            let mut next = game.clone();
+            next.mino = next.next.pop_front().unwrap();
+            next.pos = Position::init();
+            for rotate_count in 0..=3 {
+                let mut next = next.clone();
+                for _ in 0..=rotate_count {
+                    rotate_right(&mut next);
+                }
+                for dx in -4..=5 {
+                    let mut next = next.clone();
+                    let new_pos = Position {
+                        x: match next.pos.x as isize + dx {
+                            (..=0) => 0,
+                            x => x as usize,
+                        },
+                        y: next.pos.y + 1,
+                    };
+                    move_mino(&mut next, new_pos);
+                    hard_drop(&mut next);
+                    fix_mino(&mut next);
 
-            // normaliztion
-            let mut line = normalization(line as f64, 0.0, 4.0);
-            let mut height_max = 1.0 - normalization(height_max as f64, 0.0, 20.0);
-            let mut height_diff = 1.0 - normalization(height_diff as f64, 0.0, 200.0);
-            let mut dead_space = 1.0 - normalization(dead_space as f64, 0.0, 200.0);
+                    let line = erase_line_count(&next.field);
+                    let height_max = field_height_max(&next.field);
+                    let height_diff = diff_in_height(&next.field);
+                    let dead_space = dead_space_count(&next.field);
 
-            // add weight
-            line *= 100.0;
-            height_max *= 1.0;
-            height_diff *= 10.0;
-            dead_space *= 100.0;
+                    // normalization
+                    let mut line = normalization(line as f64, 0.0, 4.0);
+                    let mut height_max = 1.0 - normalization(height_max as f64, 0.0, 20.0);
+                    let mut height_diff = 1.0 - normalization(height_diff as f64, 0.0, 200.0);
+                    let mut dead_space = 1.0 - normalization(dead_space as f64, 0.0, 200.0);
 
-            // calculate score
-            let score = line + height_max + height_diff + dead_space;
+                    // add weights
+                    line *= 100.0;
+                    height_max *= 1.0;
+                    height_diff *= 10.0;
+                    dead_space *= 100.0;
 
-            if elite.1 < score {
-                elite.0 = game;
-                elite.1 = score;
+                    // calculate score
+                    let score = line + height_max + height_diff + dead_space;
+
+                    if elite.1 < score {
+                        elite.0 = game.clone();
+                        elite.1 = score;
+                    }
+                }
             }
         }
     }

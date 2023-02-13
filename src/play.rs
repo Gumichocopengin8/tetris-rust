@@ -104,7 +104,6 @@ pub fn auto() -> ! {
         draw(&game);
 
         loop {
-            thread::sleep(time::Duration::from_millis(100));
             let elite = eval(&game);
             game = elite;
             if landing(&mut game).is_err() {
