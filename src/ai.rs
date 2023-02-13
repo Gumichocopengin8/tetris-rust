@@ -24,17 +24,23 @@ pub fn eval(game: &Game) -> Game {
 
             let line = erase_line_count(&game.field);
             let height_max = field_height_max(&game.field);
+            let height_diff = diff_in_height(&game.field);
+            let dead_space = dead_space_count(&game.field);
 
             // normaliztion
             let mut line = normalization(line as f64, 0.0, 4.0);
             let mut height_max = 1.0 - normalization(height_max as f64, 0.0, 20.0);
+            let mut height_diff = 1.0 - normalization(height_diff as f64, 0.0, 200.0);
+            let mut dead_space = 1.0 - normalization(dead_space as f64, 0.0, 200.0);
 
             // add weight
             line *= 100.0;
             height_max *= 1.0;
+            height_diff *= 10.0;
+            dead_space *= 100.0;
 
             // calculate score
-            let score = line + height_max;
+            let score = line + height_max + height_diff + dead_space;
 
             if elite.1 < score {
                 elite.0 = game;
@@ -77,4 +83,39 @@ fn field_height_max(field: &FieldSize) -> usize {
 
 fn normalization(value: f64, min: f64, max: f64) -> f64 {
     (value - min) / (max - min)
+}
+
+#[allow(clippy::needless_range_loop)]
+pub fn diff_in_height(field: &FieldSize) -> usize {
+    let mut diff = 0;
+    let mut top = [0; FIELD_WIDTH - 4];
+    for x in 2..FIELD_WIDTH - 2 {
+        for y in 1..FIELD_HEIGHT - 2 {
+            if field[y][x] != block_kind::NONE {
+                top[x - 2] = FIELD_HEIGHT - y - 1;
+                break;
+            }
+        }
+    }
+    for i in 0..FIELD_WIDTH - 4 - 1 {
+        diff += top[i].abs_diff(top[i + 1])
+    }
+    diff
+}
+
+pub fn dead_space_count(field: &FieldSize) -> usize {
+    let mut count = 0;
+    for y in (1..FIELD_HEIGHT - 2).rev() {
+        for x in 2..FIELD_WIDTH - 2 {
+            if field[y][x] == block_kind::NONE {
+                for y2 in (2..y).rev() {
+                    if field[y2][x] != block_kind::NONE {
+                        count += 1;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    count
 }
