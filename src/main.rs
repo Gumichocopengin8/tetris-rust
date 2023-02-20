@@ -1,6 +1,7 @@
 mod ai;
 mod block;
 mod game;
+mod genetic_algorigthm;
 mod mino;
 mod play;
 use clap::{Parser, Subcommand};
@@ -16,6 +17,7 @@ struct Cli {
 enum Mode {
     Normal,
     Auto,
+    Learning,
 }
 
 fn main() {
@@ -26,6 +28,9 @@ fn main() {
         }
         Some(Mode::Auto) => {
             play::auto();
+        }
+        Some(Mode::Learning) => {
+            genetic_algorigthm::learning();
         }
     }
 }

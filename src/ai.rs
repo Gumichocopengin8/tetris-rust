@@ -1,6 +1,7 @@
+use crate::genetic_algorigthm::{GenoSeq, GenomeKind};
 use crate::{block::block_kind, game::*};
 
-pub fn eval(game: &Game) -> Game {
+pub fn eval(game: &Game, weight: &GenoSeq) -> Game {
     // (Game, score)
     let mut elite = (game.clone(), 0f64);
 
@@ -55,10 +56,10 @@ pub fn eval(game: &Game) -> Game {
                     let mut dead_space = 1.0 - normalization(dead_space as f64, 0.0, 200.0);
 
                     // add weights
-                    line *= 100.0;
-                    height_max *= 1.0;
-                    height_diff *= 10.0;
-                    dead_space *= 100.0;
+                    line *= weight[GenomeKind::Line] as f64;
+                    height_max *= weight[GenomeKind::HeightMax] as f64;
+                    height_diff *= weight[GenomeKind::HeightDiff] as f64;
+                    dead_space *= weight[GenomeKind::DeadSpace] as f64;
 
                     // calculate score
                     let score = line + height_max + height_diff + dead_space;
