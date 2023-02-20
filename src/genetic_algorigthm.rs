@@ -64,18 +64,22 @@ pub fn learning() -> ! {
         let mut inds = rand::random::<[Individual; POPULATION]>();
         for gen in 1..=GENERATION_MAX {
             println!("{gen} generation:");
-            for (i, ind) in inds.iter_mut().enumerate() {
-                let mut game = Game::new();
-                while game.total_line < LINE_COUNT_MAX {
-                    let elite = eval(&game, &ind.geno);
-                    game = elite;
-                    if landing(&mut game).is_err() {
-                        break;
-                    }
+            thread::scope(|s| {
+                for (i, ind) in inds.iter_mut().enumerate() {
+                    s.spawn(move || {
+                        let mut game = Game::new();
+                        while game.total_line < LINE_COUNT_MAX {
+                            let elite = eval(&game, &ind.geno);
+                            game = elite;
+                            if landing(&mut game).is_err() {
+                                break;
+                            }
+                        }
+                        ind.score = game.score;
+                        println!("{i}: {:?} => {}", ind.geno, game.score);
+                    });
                 }
-                ind.score = game.score;
-                println!("{i}: {:?} => {}", ind.geno, game.score);
-            }
+            });
             let next_genos = gen_next_generation(&inds);
             inds.iter_mut()
                 .map(|i| &mut i.geno)
@@ -96,9 +100,9 @@ pub fn learning() -> ! {
 fn gen_next_generation(inds: &[Individual]) -> [GenoSeq; POPULATION] {
     let mut rng = rand::thread_rng();
     let mut genos = vec![];
-    genos.extend_from_slice(&crossover(inds)); // 交叉
-    genos.extend_from_slice(&mutation(inds)); // 突然変異
-    genos.extend_from_slice(&selection(inds)); // 選択
+    genos.extend_from_slice(&crossover(inds));
+    genos.extend_from_slice(&mutation(inds));
+    genos.extend_from_slice(&selection(inds));
     genos.shuffle(&mut rng);
     genos.try_into().unwrap()
 }
